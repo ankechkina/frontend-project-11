@@ -37,18 +37,14 @@ export default async () => {
     submitButton: document.querySelector('button[type="submit"]'),
   };
 
-  const form = document.querySelector('form');
-  // const urlInput = document.querySelector('#url-input');
-  // const feedbackMessage = document.querySelector('.feedback');
-  // const submitButton = document.querySelector('button[type="submit"]');
+  const watchedState = onChange(state, () => render(state, elements, i18nInstance));
 
-  const watchedState = onChange(state, () => render(state, elements));
+  const form = document.querySelector('form');
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     elements.submitButton.disabled = true;
 
-    // очищаем ошибки в state перед каждым сценарием, чтобы watchedState мог измениться
     state.isValid = true;
     state.currentError = '';
 
@@ -62,7 +58,7 @@ export default async () => {
     validUrlSchema.isValid(state.currentInput)
       .then((isValid) => {
         if (!isValid) {
-          state.currentError = 'Невалидный адрес URL';
+          state.currentError = i18nInstance.t('feedbackText.invalidUrl');
           watchedState.isValid = false;
         }
         if (isValid) {
@@ -71,30 +67,29 @@ export default async () => {
           fetch(path)
             .then((response) => {
               if (response.ok) return response.json();
-              watchedState.currentError = 'Проблемы с ответом от сервера';
+              watchedState.currentError = i18nInstance.t('feedbackText.badNetworkResponse');
               return Promise.reject();
-              // throw new Error('Network response was not ok.');
             })
             .then((data) => {
               const pageContent = data.contents;
               const validRssFeed = isValidRss(pageContent);
 
               if (!validRssFeed) {
-                state.currentError = 'Невалидный адрес RSS';
+                state.currentError = i18nInstance.t('feedbackText.invalidRss');
                 watchedState.isValid = false;
               } else if (validRssFeed && !state.rssFeeds.includes(state.currentInput)) {
                 state.currentError = '';
                 state.isValid = true;
                 watchedState.rssFeeds.push(state.currentInput);
               } else if (validRssFeed && state.rssFeeds.includes(state.currentInput)) {
-                state.currentError = 'RSS уже существует';
+                state.currentError = i18nInstance.t('feedbackText.rssAlreadyExists');
                 watchedState.isValid = false;
               }
             });
         }
       })
       .catch((error) => {
-        state.currentError = `Ошибка при проверке URL: ${error.message}`;
+        state.currentError = `${i18nInstance.t('feedbackText.urlError')}: ${error.message}`;
         watchedState.isValid = false;
       });
   });

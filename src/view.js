@@ -1,4 +1,4 @@
-const render = (state, elements) => {
+const render = (state, elements, i18nInstance) => {
   const { urlInput, feedbackMessage, submitButton } = elements;
 
   urlInput.classList.remove('is-invalid');
@@ -12,7 +12,7 @@ const render = (state, elements) => {
     feedbackMessage.textContent = state.currentError;
   } else if (state.isValid && state.rssFeeds.length > 0) {
     feedbackMessage.classList.add('text-success');
-    feedbackMessage.textContent = 'RSS успешно загружен';
+    feedbackMessage.textContent = i18nInstance.t('feedbackText.success');
   }
   submitButton.disabled = false;
 };
