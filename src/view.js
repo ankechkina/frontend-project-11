@@ -6,15 +6,20 @@ const render = (state, elements, i18nInstance) => {
   feedbackMessage.classList.remove('text-success');
   feedbackMessage.textContent = '';
 
-  if (!state.isValid) {
+  submitButton.disabled = state.inputForm.state === 'processing';
+
+  if (state.inputForm.state === 'failed') {
     urlInput.classList.add('is-invalid');
     feedbackMessage.classList.add('text-danger');
-    feedbackMessage.textContent = state.currentError;
-  } else if (state.isValid && state.rssFeeds.length > 0) {
-    feedbackMessage.classList.add('text-success');
-    feedbackMessage.textContent = i18nInstance.t('feedbackText.success');
+
+    const errorCode = state.inputForm.currentError;
+    feedbackMessage.textContent = i18nInstance.t(`feedback.${errorCode}`);
   }
-  submitButton.disabled = false;
+
+  if (state.inputForm.state === 'processed') {
+    feedbackMessage.classList.add('text-success');
+    feedbackMessage.textContent = i18nInstance.t('feedback.success');
+  }
 };
 
 export default render;

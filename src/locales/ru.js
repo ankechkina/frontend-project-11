@@ -1,10 +1,10 @@
 export default {
   translation: {
-    feedbackText: {
+    feedback: {
       invalidUrl: 'Ссылка должна быть валидным URL',
-      badNetworkResponse: 'Проблемы с ответом от сервера',
+      badResponse: 'Проблемы с ответом от сервера',
       invalidRss: 'Ресурс не содержит валидный RSS',
-      rssAlreadyExists: 'RSS уже существует',
+      existingRss: 'RSS уже существует',
       urlError: 'Ошибка при проверке URL',
       success: 'RSS успешно загружен',
     },
