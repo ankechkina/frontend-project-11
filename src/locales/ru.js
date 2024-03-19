@@ -8,5 +8,10 @@ export default {
       urlError: 'Ошибка при проверке URL',
       success: 'RSS успешно загружен',
     },
+    content: {
+      postsHeader: 'Посты',
+      feedsHeader: 'Фиды',
+      viewButton: 'Просмотр',
+    },
   },
 };

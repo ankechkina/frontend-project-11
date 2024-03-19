@@ -7,7 +7,8 @@ import onChange from 'on-change';
 import axios from 'axios';
 import i18n from 'i18next';
 import ru from './locales/ru.js';
-import render from './view.js';
+import { renderFeedback, renderContent } from './view.js';
+import parseRss from './parser.js';
 
 export default () => {
   const i18nInstance = i18n.createInstance();
@@ -24,27 +25,49 @@ export default () => {
         currentInput: '',
         currentError: '',
       },
+      currentRss: {
+        title: '',
+        description: '',
+        items: [],
+      },
       rssFeeds: [],
     };
 
     const getPath = (url) => `https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`;
-    const validUrlSchema = yup.string().url('Неправильный формат URL');
+
+    /* yup.setLocale({
+       mixed: {
+         default: 'Ошибка при проверке URL',
+       },
+     }); */
+
+    const validUrlSchema = yup.string().url();
 
     const isValidRss = (site) => site.includes('<rss') || site.includes('<channel');
 
-    const elements = {
+    const feedbackElements = {
       urlInput: document.querySelector('#url-input'),
       feedbackMessage: document.querySelector('.feedback'),
       submitButton: document.querySelector('button[type="submit"]'),
     };
 
-    const watchedState = onChange(state, () => render(state, elements, i18nInstance));
+    const contentElements = {
+      postsDiv: document.querySelector('.posts'),
+      feedsDiv: document.querySelector('.feeds'),
+    };
+
+    const watchedInputForm = onChange(state.inputForm, () => {
+      renderFeedback(state, feedbackElements, i18nInstance);
+    });
+    const watchedCurrentRss = onChange(state.currentRss, () => {
+      renderContent(state, contentElements, i18nInstance);
+    });
 
     const form = document.querySelector('form');
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      watchedState.inputForm.state = 'processing';
+      watchedInputForm.state = 'processing';
 
       const formData = new FormData(e.target);
       const inputValue = formData.get('url');
@@ -57,17 +80,15 @@ export default () => {
         .then((isValid) => {
           if (!isValid) {
             state.inputForm.currentError = 'invalidUrl';
-            watchedState.inputForm.state = 'failed';
+            watchedInputForm.state = 'failed';
           }
           if (isValid) {
             const path = getPath(state.inputForm.currentInput);
 
-            fetch(path)
+            axios.get(path)
               .then((response) => {
-                if (response.ok) return response.json();
-                watchedState.inputForm.currentError = 'badResponse';
-                watchedState.inputForm.state = 'failed';
-                return Promise.reject();
+                if (response.status === 200) return response.data;
+                throw new Error('Bad response');
               })
               .then((data) => {
                 const pageContent = data.contents;
@@ -75,21 +96,37 @@ export default () => {
 
                 if (!validRssFeed) {
                   state.inputForm.currentError = 'invalidRss';
-                  watchedState.inputForm.state = 'failed';
-                } else if (validRssFeed && !state.rssFeeds.includes(state.inputForm.currentInput)) {
-                  state.inputForm.currentError = '';
-                  watchedState.rssFeeds.push(state.inputForm.currentInput);
-                  watchedState.inputForm.state = 'processed';
+                  watchedInputForm.state = 'failed';
                 } else if (validRssFeed && state.rssFeeds.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = 'existingRss';
-                  watchedState.inputForm.state = 'failed';
+                  watchedInputForm.state = 'failed';
+                } else if (validRssFeed && !state.rssFeeds.includes(state.inputForm.currentInput)) {
+                  state.inputForm.currentError = '';
+                  state.rssFeeds.push(state.inputForm.currentInput);
+                  watchedInputForm.state = 'processed';
+
+                  const channelData = parseRss(pageContent);
+
+                  const updatedCurrentRss = {
+                    title: channelData.channelTitle,
+                    description: channelData.channelDescription,
+                    items: channelData.itemData,
+                  };
+
+                  Object.assign(watchedCurrentRss, updatedCurrentRss);
+                  console.log(state);
                 }
+              })
+              .catch((error) => {
+                console.log(error.message);
+                state.inputForm.currentError = 'urlError';
+                watchedInputForm.state = 'failed';
               });
           }
         })
         .catch(() => {
           state.inputForm.currentError = 'urlError';
-          watchedState.inputForm.state = 'failed';
+          watchedInputForm.state = 'failed';
         });
     });
   });
