@@ -26,6 +26,7 @@ export default () => {
         currentError: '',
       },
       currentRss: {
+        state: 'empty', // empty processing updated
         title: '',
         description: '',
         items: [],
@@ -67,20 +68,21 @@ export default () => {
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      watchedInputForm.state = 'processing';
-
       const formData = new FormData(e.target);
       const inputValue = formData.get('url');
       const normalizedInput = inputValue.toLowerCase().trim();
-
       state.inputForm.currentInput = normalizedInput;
       form.reset();
+
+      watchedInputForm.state = 'processing';
+      state.currentRss.state = 'processing';
 
       validUrlSchema.isValid(state.inputForm.currentInput)
         .then((isValid) => {
           if (!isValid) {
             state.inputForm.currentError = 'invalidUrl';
             watchedInputForm.state = 'failed';
+            state.currentRss.state = 'empty';
           }
           if (isValid) {
             const path = getPath(state.inputForm.currentInput);
@@ -97,9 +99,11 @@ export default () => {
                 if (!validRssFeed) {
                   state.inputForm.currentError = 'invalidRss';
                   watchedInputForm.state = 'failed';
+                  state.currentRss.state = 'empty';
                 } else if (validRssFeed && state.rssFeeds.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = 'existingRss';
                   watchedInputForm.state = 'failed';
+                  state.currentRss.state = 'empty';
                 } else if (validRssFeed && !state.rssFeeds.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = '';
                   state.rssFeeds.push(state.inputForm.currentInput);
@@ -107,14 +111,21 @@ export default () => {
 
                   const channelData = parseRss(pageContent);
 
-                  const updatedCurrentRss = {
-                    title: channelData.channelTitle,
-                    description: channelData.channelDescription,
-                    items: channelData.itemData,
-                  };
+                  /*  const updatedCurrentRss = {
+                      title: channelData.channelTitle,
+                      description: channelData.channelDescription,
+                      items: channelData.itemData,
+                    }; */
 
-                  Object.assign(watchedCurrentRss, updatedCurrentRss);
+                  // Object.assign(watchedCurrentRss, updatedCurrentRss);
+
+                  state.currentRss.title = channelData.channelTitle;
+                  state.currentRss.description = channelData.channelDescription;
+                  state.currentRss.items = channelData.itemData;
+
                   console.log(state);
+
+                  watchedCurrentRss.state = 'updated';
                 }
               })
               .catch((error) => {

@@ -7,6 +7,7 @@ const renderFeedback = (state, feedbackElements, i18nInstance) => {
   feedbackMessage.textContent = '';
 
   submitButton.disabled = state.inputForm.state === 'processing';
+  urlInput.disabled = state.inputForm.state === 'processing';
 
   if (state.inputForm.state === 'failed') {
     urlInput.classList.add('is-invalid');
@@ -39,51 +40,48 @@ const renderContent = (state, contentElements, i18nInstance) => {
     </div>
     <ul class="list-group border-0 rounded-0 feeds-group"></ul>
 </div>`;
-  } else {
-    const postsGroup = document.querySelector('.posts-group');
-    const feedsGroup = document.querySelector('.feeds-group');
-
-    // элемент фида добавляется на страницу по 2-3 раза, нужен только один
-    // возможно проблема в том, что вотчер тригерится больше, чем нужно
-
-    const feedItem = document.createElement('li');
-    feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
-    feedsGroup.prepend(feedItem);
-
-    const feedDescription = document.createElement('p');
-    feedDescription.classList.add('m-0', 'small', 'text-black-50');
-    feedDescription.textContent = state.currentRss.description;
-    feedItem.prepend(feedDescription);
-
-    const feedName = document.createElement('h3');
-    feedName.classList.add('h6', 'm-0');
-    feedName.textContent = state.currentRss.title;
-    feedItem.prepend(feedName);
-
-    state.currentRss.items.forEach((item) => {
-      const listItem = document.createElement('li');
-      listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
-
-      const link = document.createElement('a');
-      link.setAttribute('href', item.link);
-      link.classList.add('fw-bold');
-      link.setAttribute('target', '_blank');
-      link.setAttribute('rel', 'noopener noreferrer');
-      link.textContent = item.title;
-
-      const button = document.createElement('button');
-      button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-      button.setAttribute('data-id', '0');
-      button.setAttribute('data-bs-toggle', 'modal');
-      button.setAttribute('data-bs-target', '#modal');
-      button.textContent = i18nInstance.t('content.viewButton');
-
-      listItem.appendChild(link);
-      listItem.appendChild(button);
-
-      postsGroup.prepend(listItem);
-    });
   }
+
+  const postsGroup = document.querySelector('.posts-group');
+  const feedsGroup = document.querySelector('.feeds-group');
+
+  const feedItem = document.createElement('li');
+  feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
+  feedsGroup.prepend(feedItem);
+
+  const feedDescription = document.createElement('p');
+  feedDescription.classList.add('m-0', 'small', 'text-black-50');
+  feedDescription.textContent = state.currentRss.description;
+  feedItem.prepend(feedDescription);
+
+  const feedName = document.createElement('h3');
+  feedName.classList.add('h6', 'm-0');
+  feedName.textContent = state.currentRss.title;
+  feedItem.prepend(feedName);
+
+  state.currentRss.items.forEach((item) => {
+    const listItem = document.createElement('li');
+    listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+
+    const link = document.createElement('a');
+    link.setAttribute('href', item.link);
+    link.classList.add('fw-bold');
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer');
+    link.textContent = item.title;
+
+    const button = document.createElement('button');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    button.setAttribute('data-id', '0');
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#modal');
+    button.textContent = i18nInstance.t('content.viewButton');
+
+    listItem.appendChild(link);
+    listItem.appendChild(button);
+
+    postsGroup.prepend(listItem);
+  });
 };
 
 export { renderFeedback, renderContent };
