@@ -9,6 +9,8 @@ import i18n from 'i18next';
 import ru from './locales/ru.js';
 import { renderFeedback, renderContent } from './view.js';
 import parseRss from './parser.js';
+import getUpdates from './updates.js';
+import { getPath } from './utils.js';
 
 export default () => {
   const i18nInstance = i18n.createInstance();
@@ -21,26 +23,22 @@ export default () => {
   }).then(() => {
     const state = {
       inputForm: {
-        state: 'filling',
+        state: 'filling', // filling, processing, processed, failed
         currentInput: '',
         currentError: '',
       },
       currentRss: {
-        state: 'empty', // empty processing updated
+        state: 'empty', // empty, processing, loaded
         title: '',
         description: '',
         items: [],
       },
-      rssFeeds: [],
+      parsedRss: {
+        state: 'empty', // empty, loaded, checking updates, updated, no updates
+        feeds: [],
+      },
+      rssPaths: [],
     };
-
-    const getPath = (url) => `https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`;
-
-    /* yup.setLocale({
-       mixed: {
-         default: 'Ошибка при проверке URL',
-       },
-     }); */
 
     const validUrlSchema = yup.string().url();
 
@@ -60,7 +58,12 @@ export default () => {
     const watchedInputForm = onChange(state.inputForm, () => {
       renderFeedback(state, feedbackElements, i18nInstance);
     });
+
     const watchedCurrentRss = onChange(state.currentRss, () => {
+      renderContent(state, contentElements, i18nInstance);
+    });
+
+    const watchedFeeds = onChange(state.parsedRss, () => {
       renderContent(state, contentElements, i18nInstance);
     });
 
@@ -100,44 +103,59 @@ export default () => {
                   state.inputForm.currentError = 'invalidRss';
                   watchedInputForm.state = 'failed';
                   state.currentRss.state = 'empty';
-                } else if (validRssFeed && state.rssFeeds.includes(state.inputForm.currentInput)) {
+                } else if (validRssFeed && state.rssPaths.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = 'existingRss';
                   watchedInputForm.state = 'failed';
                   state.currentRss.state = 'empty';
-                } else if (validRssFeed && !state.rssFeeds.includes(state.inputForm.currentInput)) {
+                } else if (validRssFeed && !state.rssPaths.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = '';
-                  state.rssFeeds.push(state.inputForm.currentInput);
-                  watchedInputForm.state = 'processed';
+                  state.rssPaths.push(state.inputForm.currentInput);
 
                   const channelData = parseRss(pageContent);
-
-                  /*  const updatedCurrentRss = {
-                      title: channelData.channelTitle,
-                      description: channelData.channelDescription,
-                      items: channelData.itemData,
-                    }; */
-
-                  // Object.assign(watchedCurrentRss, updatedCurrentRss);
-
                   state.currentRss.title = channelData.channelTitle;
                   state.currentRss.description = channelData.channelDescription;
                   state.currentRss.items = channelData.itemData;
 
-                  console.log(state);
+                  state.parsedRss.feeds.push(channelData);
+                  state.parsedRss.state = 'loaded';
 
-                  watchedCurrentRss.state = 'updated';
+                  watchedInputForm.state = 'processed';
+                  watchedCurrentRss.state = 'loaded';
+
+                  const checkForUpdates = () => {
+                    state.parsedRss.state = 'checking updates';
+                   // console.log(state.parsedRss.state);
+                    getUpdates(state)
+                      .then((updates) => {
+                        if (updates !== null) {
+                          watchedFeeds.state = 'updated';
+                        } else {
+                          state.parsedRss.state = 'no updates';
+                         // console.log(state.parsedRss.state);
+                        }
+                        setTimeout(checkForUpdates, 5000, state, watchedFeeds);
+                      })
+                      .catch((error) => {
+                        console.error(error);
+                        setTimeout(checkForUpdates, 5000, state, watchedFeeds);
+                      });
+                  };
+
+                  checkForUpdates();
                 }
               })
               .catch((error) => {
                 console.log(error.message);
                 state.inputForm.currentError = 'urlError';
                 watchedInputForm.state = 'failed';
+                state.currentRss.state = 'empty';
               });
           }
         })
         .catch(() => {
           state.inputForm.currentError = 'urlError';
           watchedInputForm.state = 'failed';
+          state.currentRss.state = 'empty';
         });
     });
   });
