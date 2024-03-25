@@ -27,12 +27,6 @@ export default () => {
         currentInput: '',
         currentError: '',
       },
-      currentRss: {
-        state: 'empty', // empty, processing, loaded
-        title: '',
-        description: '',
-        items: [],
-      },
       parsedRss: {
         state: 'empty', // empty, loaded, checking updates, updated, no updates
         feeds: [],
@@ -59,10 +53,6 @@ export default () => {
       renderFeedback(state, feedbackElements, i18nInstance);
     });
 
-    const watchedCurrentRss = onChange(state.currentRss, () => {
-      renderContent(state, contentElements, i18nInstance);
-    });
-
     const watchedFeeds = onChange(state.parsedRss, () => {
       renderContent(state, contentElements, i18nInstance);
     });
@@ -78,14 +68,14 @@ export default () => {
       form.reset();
 
       watchedInputForm.state = 'processing';
-      state.currentRss.state = 'processing';
+      state.parsedRss.state = 'processing';
 
       validUrlSchema.isValid(state.inputForm.currentInput)
         .then((isValid) => {
           if (!isValid) {
             state.inputForm.currentError = 'invalidUrl';
             watchedInputForm.state = 'failed';
-            state.currentRss.state = 'empty';
+            state.parsedRss.state = 'empty';
           }
           if (isValid) {
             const path = getPath(state.inputForm.currentInput);
@@ -102,42 +92,44 @@ export default () => {
                 if (!validRssFeed) {
                   state.inputForm.currentError = 'invalidRss';
                   watchedInputForm.state = 'failed';
-                  state.currentRss.state = 'empty';
+                  state.parsedRss.state = 'empty';
                 } else if (validRssFeed && state.rssPaths.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = 'existingRss';
                   watchedInputForm.state = 'failed';
-                  state.currentRss.state = 'empty';
+                  state.parsedRss.state = 'empty';
                 } else if (validRssFeed && !state.rssPaths.includes(state.inputForm.currentInput)) {
                   state.inputForm.currentError = '';
                   state.rssPaths.push(state.inputForm.currentInput);
 
                   const channelData = parseRss(pageContent);
-                  state.currentRss.title = channelData.channelTitle;
-                  state.currentRss.description = channelData.channelDescription;
-                  state.currentRss.items = channelData.itemData;
-
                   state.parsedRss.feeds.push(channelData);
-                  state.parsedRss.state = 'loaded';
 
                   watchedInputForm.state = 'processed';
-                  watchedCurrentRss.state = 'loaded';
+                  watchedFeeds.state = 'loaded';
 
                   const checkForUpdates = () => {
                     state.parsedRss.state = 'checking updates';
-                   // console.log(state.parsedRss.state);
+                    console.log(state.parsedRss.state);
                     getUpdates(state)
                       .then((updates) => {
-                        if (updates !== null) {
+                        const hasUpdates = updates.some((update) => update !== null);
+                        if (hasUpdates) {
+                          updates.forEach((update, index) => {
+                            if (update !== null) {
+                              state.parsedRss.feeds[index] = update;
+                            }
+                          });
                           watchedFeeds.state = 'updated';
+                          console.log(state.parsedRss.state);
                         } else {
                           state.parsedRss.state = 'no updates';
-                         // console.log(state.parsedRss.state);
+                          console.log(state.parsedRss.state);
                         }
-                        setTimeout(checkForUpdates, 5000, state, watchedFeeds);
+                        setTimeout(checkForUpdates, 5000);
                       })
                       .catch((error) => {
                         console.error(error);
-                        setTimeout(checkForUpdates, 5000, state, watchedFeeds);
+                        setTimeout(checkForUpdates, 5000);
                       });
                   };
 
@@ -148,14 +140,14 @@ export default () => {
                 console.log(error.message);
                 state.inputForm.currentError = 'urlError';
                 watchedInputForm.state = 'failed';
-                state.currentRss.state = 'empty';
+                state.parsedRss.state = 'empty';
               });
           }
         })
         .catch(() => {
           state.inputForm.currentError = 'urlError';
           watchedInputForm.state = 'failed';
-          state.currentRss.state = 'empty';
+          state.parsedRss.state = 'empty';
         });
     });
   });

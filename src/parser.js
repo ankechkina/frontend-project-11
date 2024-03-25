@@ -6,10 +6,10 @@ export default (pageContent) => {
   const tagsArray = Array.from(channelTags);
 
   const titleEl = tagsArray.find((el) => el.tagName === 'title');
-  const channelTitle = titleEl.textContent;
+  const title = titleEl.textContent;
 
   const descriptionEl = tagsArray.find((el) => el.tagName === 'description');
-  const channelDescription = descriptionEl.textContent;
+  const description = descriptionEl.textContent;
 
   const items = tagsArray.filter((el) => el.tagName === 'item');
 
@@ -25,8 +25,8 @@ export default (pageContent) => {
   });
 
   return {
-    channelTitle,
-    channelDescription,
+    title,
+    description,
     itemData,
   };
 };
