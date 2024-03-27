@@ -48,6 +48,8 @@ const renderContent = (state, contentElements, i18nInstance) => {
   postsGroup.innerHTML = '';
   feedsGroup.innerHTML = '';
 
+  let postId = 0;
+
   state.parsedRss.feeds.forEach((feedObj) => {
     const feedItem = document.createElement('li');
     feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
@@ -63,20 +65,29 @@ const renderContent = (state, contentElements, i18nInstance) => {
     feedName.textContent = feedObj.title;
     feedItem.prepend(feedName);
 
+
     feedObj.itemData.forEach((item) => {
       const listItem = document.createElement('li');
       listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
 
+      postId += 1;
+
       const link = document.createElement('a');
       link.setAttribute('href', item.link);
-      link.classList.add('fw-bold');
+      link.setAttribute('data-id', postId);
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       link.textContent = item.title;
 
+      if (state.uiState.visitedIds.includes(postId)) {
+        link.classList.add('fw-normal');
+      } else {
+        link.classList.add('fw-bold');
+      }
+
       const button = document.createElement('button');
       button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-      button.setAttribute('data-id', '0');
+      button.setAttribute('data-id', postId);
       button.setAttribute('data-bs-toggle', 'modal');
       button.setAttribute('data-bs-target', '#modal');
       button.textContent = i18nInstance.t('content.viewButton');

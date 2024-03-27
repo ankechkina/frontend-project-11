@@ -11,6 +11,7 @@ import { renderFeedback, renderContent } from './view.js';
 import parseRss from './parser.js';
 import getUpdates from './updates.js';
 import { getPath } from './utils.js';
+import { getPostsIds, changePostsUi } from './ui.js';
 
 export default () => {
   const i18nInstance = i18n.createInstance();
@@ -32,6 +33,10 @@ export default () => {
         feeds: [],
       },
       rssPaths: [],
+      uiState: {
+        posts: [],
+        visitedIds: [],
+      },
     };
 
     const validUrlSchema = yup.string().url();
@@ -56,6 +61,10 @@ export default () => {
     const watchedFeeds = onChange(state.parsedRss, () => {
       renderContent(state, contentElements, i18nInstance);
     });
+
+    const watchedUiState = onChange(state.uiState.posts, () => {
+      changePostsUi(state);
+    })
 
     const form = document.querySelector('form');
 
@@ -107,9 +116,43 @@ export default () => {
                   watchedInputForm.state = 'processed';
                   watchedFeeds.state = 'loaded';
 
+                  const postsIds = getPostsIds();
+
+                  postsIds.forEach((id) => {
+                    const uiObj = { postId: id, state: 'not visited', };
+                    state.uiState.posts.push(uiObj);
+                  });
+
+                  const postLinks = document.querySelectorAll('a[data-id]');
+                  const postButtons = document.querySelectorAll('button[data-id]');
+
+                  postLinks.forEach((link) => {
+                    link.addEventListener('click', (e) => {
+                      const currentId = parseInt(e.target.dataset.id);
+                      const currentPost = watchedUiState.find((post) => post.postId === currentId);
+                      currentPost.state = 'visited';
+
+                      if (!state.uiState.visitedIds.includes(currentId)) {
+                        state.uiState.visitedIds.push(currentId);
+                      }
+                    })
+                  });
+
+                  postButtons.forEach((button) => {
+                    button.addEventListener('click', (e) => {
+                      const currentId = parseInt(e.target.dataset.id);
+                      const currentPost = watchedUiState.find((post) => post.postId === parseInt(currentId));
+                      currentPost.state = 'visited';
+
+                      if (!state.uiState.visitedIds.includes(currentId)) {
+                        state.uiState.visitedIds.push(currentId);
+                      }
+                    })
+                  });
+
                   const checkForUpdates = () => {
                     state.parsedRss.state = 'checking updates';
-                    console.log(state.parsedRss.state);
+                    // console.log(state.parsedRss.state);
                     getUpdates(state)
                       .then((updates) => {
                         const hasUpdates = updates.some((update) => update !== null);
@@ -120,10 +163,10 @@ export default () => {
                             }
                           });
                           watchedFeeds.state = 'updated';
-                          console.log(state.parsedRss.state);
+                          // console.log(state.parsedRss.state);
                         } else {
                           state.parsedRss.state = 'no updates';
-                          console.log(state.parsedRss.state);
+                          // console.log(state.parsedRss.state);
                         }
                         setTimeout(checkForUpdates, 5000);
                       })
