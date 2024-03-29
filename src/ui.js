@@ -18,6 +18,4 @@ const changePostsUi = (state) => {
   });
 };
 
-// добавить предпросмотр поста в модальном окне
-
 export { getPostsIds, changePostsUi };

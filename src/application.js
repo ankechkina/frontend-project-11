@@ -1,4 +1,4 @@
-/* eslint-disable no-console, no-unused-vars, prefer-destructuring, import/extensions, radix, max-len, no-shadow */
+/* eslint-disable no-console, no-unused-vars, prefer-destructuring, import/extensions, radix, max-len, no-shadow, no-param-reassign, no-multi-assign */
 
 import './styles.scss';
 import 'bootstrap';
@@ -24,12 +24,12 @@ export default () => {
   }).then(() => {
     const state = {
       inputForm: {
-        state: 'filling', // filling, processing, processed, failed
+        state: 'filling',
         currentInput: '',
         currentError: '',
       },
       parsedRss: {
-        state: 'empty', // empty, loaded, checking updates, updated, no updates
+        state: 'empty',
         feeds: [],
       },
       rssPaths: [],
@@ -79,21 +79,6 @@ export default () => {
       showModalWindow(state, modalElements);
     });
 
-    const modal = document.getElementById('myModal');
-
-    modal.addEventListener('show.bs.modal', () => {
-      const backdrop = document.createElement('div');
-      backdrop.classList.add('modal-backdrop', 'fade', 'show');
-      document.body.appendChild(backdrop);
-    });
-
-    modal.addEventListener('hide.bs.modal', () => {
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.parentNode.removeChild(backdrop);
-      }
-    });
-
     const form = document.querySelector('form');
 
     form.addEventListener('submit', (e) => {
@@ -141,6 +126,16 @@ export default () => {
                   const channelData = parseRss(pageContent);
                   state.parsedRss.feeds.push(channelData);
 
+                  let postCounter = 0;
+
+                  state.parsedRss.feeds.forEach((feed) => {
+                    feed.itemData.forEach((item) => {
+                      item.id = postCounter += 1;
+                    });
+                  });
+
+                  console.log(state.parsedRss.feeds);
+
                   watchedInputForm.state = 'processed';
                   watchedFeeds.state = 'loaded';
 
@@ -183,7 +178,6 @@ export default () => {
 
                   const checkForUpdates = () => {
                     state.parsedRss.state = 'checking updates';
-                    // console.log(state.parsedRss.state);
                     getUpdates(state)
                       .then((updates) => {
                         const hasUpdates = updates.some((update) => update !== null);
@@ -194,10 +188,8 @@ export default () => {
                             }
                           });
                           watchedFeeds.state = 'updated';
-                          // console.log(state.parsedRss.state);
                         } else {
                           state.parsedRss.state = 'no updates';
-                          // console.log(state.parsedRss.state);
                         }
                         setTimeout(checkForUpdates, 5000);
                       })
