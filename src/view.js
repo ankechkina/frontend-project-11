@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars, no-console */
+
 const renderFeedback = (state, feedbackElements, i18nInstance) => {
   const { urlInput, feedbackMessage, submitButton } = feedbackElements;
 
@@ -65,7 +67,6 @@ const renderContent = (state, contentElements, i18nInstance) => {
     feedName.textContent = feedObj.title;
     feedItem.prepend(feedName);
 
-
     feedObj.itemData.forEach((item) => {
       const listItem = document.createElement('li');
       listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -89,7 +90,7 @@ const renderContent = (state, contentElements, i18nInstance) => {
       button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
       button.setAttribute('data-id', postId);
       button.setAttribute('data-bs-toggle', 'modal');
-      button.setAttribute('data-bs-target', '#modal');
+      button.setAttribute('data-bs-target', '#myModal');
       button.textContent = i18nInstance.t('content.viewButton');
 
       listItem.appendChild(link);
@@ -100,4 +101,9 @@ const renderContent = (state, contentElements, i18nInstance) => {
   });
 };
 
-export { renderFeedback, renderContent };
+const showModalWindow = (state, modalElements) => {
+  console.log('сработал модальный вотчер!');
+  console.log(state.clickedButton);
+};
+
+export { renderFeedback, renderContent, showModalWindow };

@@ -1,4 +1,4 @@
-/* eslint-disable no-console, no-unused-vars, prefer-destructuring, import/extensions */
+/* eslint-disable no-console, no-unused-vars, prefer-destructuring, import/extensions, radix, max-len, no-shadow */
 
 import './styles.scss';
 import 'bootstrap';
@@ -7,7 +7,7 @@ import onChange from 'on-change';
 import axios from 'axios';
 import i18n from 'i18next';
 import ru from './locales/ru.js';
-import { renderFeedback, renderContent } from './view.js';
+import { renderFeedback, renderContent, showModalWindow } from './view.js';
 import parseRss from './parser.js';
 import getUpdates from './updates.js';
 import { getPath } from './utils.js';
@@ -37,6 +37,9 @@ export default () => {
         posts: [],
         visitedIds: [],
       },
+      clickedButton: {
+        id: 0,
+      },
     };
 
     const validUrlSchema = yup.string().url();
@@ -54,6 +57,12 @@ export default () => {
       feedsDiv: document.querySelector('.feeds'),
     };
 
+    const modalElements = {
+      modalTitle: document.querySelector('.modal-title'),
+      modalBody: document.querySelector('.modal-body'),
+      modalButton: document.querySelector('.modal-footer > .full-article'),
+    };
+
     const watchedInputForm = onChange(state.inputForm, () => {
       renderFeedback(state, feedbackElements, i18nInstance);
     });
@@ -64,7 +73,26 @@ export default () => {
 
     const watchedUiState = onChange(state.uiState.posts, () => {
       changePostsUi(state);
-    })
+    });
+
+    const watchedClickedButton = onChange(state.clickedButton, () => {
+      showModalWindow(state, modalElements);
+    });
+
+    const modal = document.getElementById('myModal');
+
+    modal.addEventListener('show.bs.modal', () => {
+      const backdrop = document.createElement('div');
+      backdrop.classList.add('modal-backdrop', 'fade', 'show');
+      document.body.appendChild(backdrop);
+    });
+
+    modal.addEventListener('hide.bs.modal', () => {
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+    });
 
     const form = document.querySelector('form');
 
@@ -119,7 +147,7 @@ export default () => {
                   const postsIds = getPostsIds();
 
                   postsIds.forEach((id) => {
-                    const uiObj = { postId: id, state: 'not visited', };
+                    const uiObj = { postId: id, state: 'not visited' };
                     state.uiState.posts.push(uiObj);
                   });
 
@@ -135,7 +163,7 @@ export default () => {
                       if (!state.uiState.visitedIds.includes(currentId)) {
                         state.uiState.visitedIds.push(currentId);
                       }
-                    })
+                    });
                   });
 
                   postButtons.forEach((button) => {
@@ -144,10 +172,13 @@ export default () => {
                       const currentPost = watchedUiState.find((post) => post.postId === parseInt(currentId));
                       currentPost.state = 'visited';
 
+                      state.clickedButton.id = 0;
+                      watchedClickedButton.id = currentId;
+
                       if (!state.uiState.visitedIds.includes(currentId)) {
                         state.uiState.visitedIds.push(currentId);
                       }
-                    })
+                    });
                   });
 
                   const checkForUpdates = () => {
