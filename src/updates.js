@@ -1,4 +1,4 @@
-/* eslint-disable no-console, import/extensions, no-param-reassign */
+/* eslint-disable import/extensions */
 
 import { getPath, getPageContent } from './utils.js';
 import parseRss from './parser.js';

@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars, no-console */
-
 const renderFeedback = (state, feedbackElements, i18nInstance) => {
   const { urlInput, feedbackMessage, submitButton } = feedbackElements;
 

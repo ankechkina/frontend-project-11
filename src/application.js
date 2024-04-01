@@ -1,4 +1,4 @@
-/* eslint-disable no-console, no-unused-vars, prefer-destructuring, import/extensions, radix, max-len, no-shadow, no-param-reassign, no-multi-assign */
+/* eslint-disable import/extensions */
 
 import './styles.scss';
 import 'bootstrap';
@@ -128,13 +128,12 @@ export default () => {
 
                   let postCounter = 0;
 
-                  state.parsedRss.feeds.forEach((feed) => {
-                    feed.itemData.forEach((item) => {
-                      item.id = postCounter += 1;
+                  state.parsedRss.feeds.forEach((feed, feedIndex) => {
+                    feed.itemData.forEach((item, index) => {
+                      state.parsedRss.feeds[feedIndex].itemData[index].id = postCounter;
+                      postCounter += 1;
                     });
                   });
-
-                  console.log(state.parsedRss.feeds);
 
                   watchedInputForm.state = 'processed';
                   watchedFeeds.state = 'loaded';
@@ -150,8 +149,8 @@ export default () => {
                   const postButtons = document.querySelectorAll('button[data-id]');
 
                   postLinks.forEach((link) => {
-                    link.addEventListener('click', (e) => {
-                      const currentId = parseInt(e.target.dataset.id);
+                    link.addEventListener('click', (ev) => {
+                      const currentId = parseInt(ev.target.dataset.id, 10);
                       const currentPost = watchedUiState.find((post) => post.postId === currentId);
                       currentPost.state = 'visited';
 
@@ -162,9 +161,12 @@ export default () => {
                   });
 
                   postButtons.forEach((button) => {
-                    button.addEventListener('click', (e) => {
-                      const currentId = parseInt(e.target.dataset.id);
-                      const currentPost = watchedUiState.find((post) => post.postId === parseInt(currentId));
+                    button.addEventListener('click', (event) => {
+                      const currentId = parseInt(event.target.dataset.id, 10);
+                      const currentPost = watchedUiState.find((post) => {
+                        const currPost = post.postId === parseInt(currentId, 10);
+                        return currPost;
+                      });
                       currentPost.state = 'visited';
 
                       state.clickedButton.id = 0;
@@ -193,17 +195,16 @@ export default () => {
                         }
                         setTimeout(checkForUpdates, 5000);
                       })
-                      .catch((error) => {
-                        console.error(error);
+                      .catch(() => {
+                        state.inputForm.currentError = 'urlError';
+                        watchedInputForm.state = 'failed';
                         setTimeout(checkForUpdates, 5000);
                       });
                   };
-
                   checkForUpdates();
                 }
               })
-              .catch((error) => {
-                console.log(error.message);
+              .catch(() => {
                 state.inputForm.currentError = 'urlError';
                 watchedInputForm.state = 'failed';
                 state.parsedRss.state = 'empty';

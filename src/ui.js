@@ -1,16 +1,17 @@
-/* eslint-disable radix, max-len */
-
 const getPostsIds = () => {
   const links = document.querySelectorAll('a[data-id]');
-  const idsArray = Array.from(links).map((link) => parseInt(link.dataset.id));
+  const idsArray = Array.from(links).map((link) => parseInt(link.dataset.id, 10));
   return idsArray;
 };
 
 const changePostsUi = (state) => {
-  const links = document.querySelectorAll('a[data-id]');
-  const visitedUiObj = state.uiState.posts.filter((post) => post.state === 'visited');
+  const links = Array.from(document.querySelectorAll('a[data-id]'));
+  const visitedObj = state.uiState.posts.filter((post) => post.state === 'visited');
 
-  const visitedLinks = visitedUiObj.map((post) => Array.from(links).find((el) => parseInt(el.dataset.id) === post.postId));
+  const visitedLinks = visitedObj.map((post) => {
+    const foundLink = links.find((el) => parseInt(el.dataset.id, 10) === post.postId);
+    return foundLink;
+  });
 
   visitedLinks.forEach((el) => {
     el.classList.remove('fw-bold');
