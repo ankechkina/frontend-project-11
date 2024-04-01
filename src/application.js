@@ -92,6 +92,12 @@ export default () => {
       watchedInputForm.state = 'processing';
       state.parsedRss.state = 'processing';
 
+      if (state.inputForm.currentInput === '') {
+        state.inputForm.currentError = 'emptyField';
+        watchedInputForm.state = 'failed';
+        state.parsedRss.state = 'empty';
+      }
+
       validUrlSchema.isValid(state.inputForm.currentInput)
         .then((isValid) => {
           if (!isValid) {
