@@ -202,7 +202,7 @@ export default () => {
                         setTimeout(checkForUpdates, 5000);
                       })
                       .catch(() => {
-                        state.inputForm.currentError = 'urlError';
+                        state.inputForm.currentError = 'networkError';
                         watchedInputForm.state = 'failed';
                         setTimeout(checkForUpdates, 5000);
                       });
@@ -211,14 +211,14 @@ export default () => {
                 }
               })
               .catch(() => {
-                state.inputForm.currentError = 'urlError';
+                state.inputForm.currentError = 'networkError';
                 watchedInputForm.state = 'failed';
                 state.parsedRss.state = 'empty';
               });
           }
         })
         .catch(() => {
-          state.inputForm.currentError = 'urlError';
+          state.inputForm.currentError = 'networkError';
           watchedInputForm.state = 'failed';
           state.parsedRss.state = 'empty';
         });
