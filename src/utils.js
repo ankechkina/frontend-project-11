@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const getPath = (url) => `https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`;
+const getPath = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
 const getPageContent = (path) => axios.get(path)
   .then((response) => {
