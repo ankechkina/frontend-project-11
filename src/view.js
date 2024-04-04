@@ -75,7 +75,7 @@ const renderContent = (state, contentElements, i18nInstance) => {
       link.textContent = item.title;
 
       if (state.uiState.visitedIds.includes(item.id)) {
-        link.classList.add('fw-normal');
+        link.classList.add('fw-normal', 'link-secondary');
       } else {
         link.classList.add('fw-bold');
       }
