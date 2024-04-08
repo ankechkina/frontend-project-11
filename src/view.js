@@ -69,12 +69,12 @@ const renderContent = (state, contentElements, i18nInstance) => {
 
       const link = document.createElement('a');
       link.setAttribute('href', item.link);
-      link.setAttribute('data-id', item.id);
+      link.setAttribute('data-id', item.link);
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
       link.textContent = item.title;
 
-      if (state.uiState.visitedIds.includes(item.id)) {
+      if (state.uiState.visitedIds.includes(item.link)) {
         link.classList.add('fw-normal', 'link-secondary');
       } else {
         link.classList.add('fw-bold');
@@ -82,7 +82,7 @@ const renderContent = (state, contentElements, i18nInstance) => {
 
       const button = document.createElement('button');
       button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-      button.setAttribute('data-id', item.id);
+      button.setAttribute('data-id', item.link);
       button.setAttribute('data-bs-toggle', 'modal');
       button.setAttribute('data-bs-target', '#myModal');
       button.textContent = i18nInstance.t('content.viewButton');
@@ -99,7 +99,7 @@ const showModalWindow = (state, modalElements) => {
   const { modalTitle, modalBody, modalButton } = modalElements;
 
   const allItems = state.parsedRss.feeds.flatMap((feed) => feed.itemData);
-  const currentItem = allItems.find((item) => item.id === state.clickedButton.id);
+  const currentItem = allItems.find((item) => item.link === state.clickedButton.id);
 
   modalTitle.textContent = currentItem.title;
   modalBody.textContent = currentItem.description;

@@ -1,22 +1,20 @@
 const getPostsIds = () => {
   const links = document.querySelectorAll('a[data-id]');
-  const idsArray = Array.from(links).map((link) => parseInt(link.dataset.id, 10));
+  const idsArray = Array.from(links).map((link) => link.dataset.id);
   return idsArray;
 };
 
 const changePostsUi = (state) => {
   const links = Array.from(document.querySelectorAll('a[data-id]'));
-  const visitedObj = state.uiState.posts.filter((post) => post.state === 'visited');
+  const visitedPosts = state.uiState.posts.filter((post) => post.state === 'visited');
 
-  const visitedLinks = visitedObj.map((post) => {
-    const foundLink = links.find((el) => parseInt(el.dataset.id, 10) === post.postId);
-    return foundLink;
-  });
-
-  visitedLinks.forEach((el) => {
-    el.classList.remove('fw-bold');
-    el.classList.add('fw-normal');
+  visitedPosts.forEach((post) => {
+    const foundLink = links.find((el) => el.dataset.id === post.postId);
+    if (foundLink) {
+      foundLink.classList.remove('fw-bold');
+      foundLink.classList.add('fw-normal', 'link-secondary');
+    }
   });
 };
 
-export { getPostsIds, changePostsUi };
+export { changePostsUi, getPostsIds };

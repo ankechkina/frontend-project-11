@@ -11,7 +11,7 @@ import { renderFeedback, renderContent, showModalWindow } from './view.js';
 import parseRss from './parser.js';
 import getUpdates from './updates.js';
 import { getPath } from './utils.js';
-import { getPostsIds, changePostsUi } from './ui.js';
+import { changePostsUi, getPostsIds } from './ui.js';
 
 export default () => {
   const i18nInstance = i18n.createInstance();
@@ -38,7 +38,7 @@ export default () => {
         visitedIds: [],
       },
       clickedButton: {
-        id: 0,
+        id: '',
       },
     };
 
@@ -71,7 +71,7 @@ export default () => {
       renderContent(state, contentElements, i18nInstance);
     });
 
-    const watchedUiState = onChange(state.uiState.posts, () => {
+    const watchedUiState = onChange(state.uiState, () => {
       changePostsUi(state);
     });
 
@@ -132,19 +132,10 @@ export default () => {
                   const channelData = parseRss(pageContent);
                   state.parsedRss.feeds.push(channelData);
 
-                  let postCounter = 0;
-
-                  state.parsedRss.feeds.forEach((feed, feedIndex) => {
-                    feed.itemData.forEach((item, index) => {
-                      state.parsedRss.feeds[feedIndex].itemData[index].id = postCounter;
-                      postCounter += 1;
-                    });
-                  });
-
                   watchedInputForm.state = 'processed';
                   watchedFeeds.state = 'loaded';
 
-                  const postsIds = getPostsIds();
+                  let postsIds = getPostsIds();
 
                   postsIds.forEach((id) => {
                     const uiObj = { postId: id, state: 'not visited' };
@@ -156,30 +147,33 @@ export default () => {
 
                   postLinks.forEach((link) => {
                     link.addEventListener('click', (ev) => {
-                      const currentId = parseInt(ev.target.dataset.id, 10);
-                      const currentPost = watchedUiState.find((post) => post.postId === currentId);
+                      const currentId = ev.target.dataset.id;
+                      const currentPost = state.uiState.posts.find((post) => {
+                        const foundPost = post.postId === currentId;
+                        return foundPost;
+                      });
                       currentPost.state = 'visited';
 
                       if (!state.uiState.visitedIds.includes(currentId)) {
-                        state.uiState.visitedIds.push(currentId);
+                        watchedUiState.visitedIds.push(currentId);
                       }
                     });
                   });
 
                   postButtons.forEach((button) => {
                     button.addEventListener('click', (event) => {
-                      const currentId = parseInt(event.target.dataset.id, 10);
-                      const currentPost = watchedUiState.find((post) => {
-                        const currPost = post.postId === parseInt(currentId, 10);
+                      const currentId = event.target.dataset.id;
+                      const currentPost = state.uiState.posts.find((post) => {
+                        const currPost = post.postId === currentId;
                         return currPost;
                       });
                       currentPost.state = 'visited';
 
-                      state.clickedButton.id = 0;
+                      state.clickedButton.id = '';
                       watchedClickedButton.id = currentId;
 
                       if (!state.uiState.visitedIds.includes(currentId)) {
-                        state.uiState.visitedIds.push(currentId);
+                        watchedUiState.visitedIds.push(currentId);
                       }
                     });
                   });
@@ -196,6 +190,57 @@ export default () => {
                             }
                           });
                           watchedFeeds.state = 'updated';
+
+                          const updatedPostIds = getPostsIds();
+                          updatedPostIds.sort();
+                          postsIds.sort();
+
+                          const hasNewPosts = updatedPostIds.some((id, index) => {
+                            const result = id !== postsIds[index];
+                            return result;
+                          });
+                          if (hasNewPosts) {
+                            const newPosts = updatedPostIds.filter((id) => !postsIds.includes(id));
+                            newPosts.forEach((id) => {
+                              const uiObj = { postId: id, state: 'not visited' };
+                              state.uiState.posts.push(uiObj);
+                            });
+                            postsIds = updatedPostIds;
+                          }
+
+                          const updatedPostLinks = document.querySelectorAll('a[data-id]');
+                          const updatedPostButtons = document.querySelectorAll('button[data-id]');
+
+                          updatedPostLinks.forEach((link) => {
+                            link.addEventListener('click', (ev) => {
+                              const currentId = ev.target.dataset.id;
+                              const currentPost = state.uiState.posts.find((post) => {
+                                const resultLink = post.postId === currentId;
+                                return resultLink;
+                              });
+                              currentPost.state = 'visited';
+                              if (!state.uiState.visitedIds.includes(currentId)) {
+                                watchedUiState.visitedIds.push(currentId);
+                              }
+                            });
+                          });
+
+                          updatedPostButtons.forEach((button) => {
+                            button.addEventListener('click', (event) => {
+                              const currentId = event.target.dataset.id;
+                              const currentPost = state.uiState.posts.find((post) => {
+                                const currPost = post.postId === currentId;
+                                return currPost;
+                              });
+                              currentPost.state = 'visited';
+                              state.clickedButton.id = '';
+                              watchedClickedButton.id = currentId;
+
+                              if (!state.uiState.visitedIds.includes(currentId)) {
+                                watchedUiState.visitedIds.push(currentId);
+                              }
+                            });
+                          });
                         } else {
                           state.parsedRss.state = 'no updates';
                         }
