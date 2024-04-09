@@ -87,16 +87,15 @@ export default () => {
       const inputValue = formData.get('url');
       const normalizedInput = inputValue.toLowerCase().trim();
       state.inputForm.currentInput = normalizedInput;
-      form.reset();
 
       watchedInputForm.state = 'processing';
       state.parsedRss.state = 'processing';
 
-      if (state.inputForm.currentInput === '') {
+     /* if (state.inputForm.currentInput === '') {
         state.inputForm.currentError = 'emptyField';
         watchedInputForm.state = 'failed';
         state.parsedRss.state = 'empty';
-      }
+      } */
 
       validUrlSchema.isValid(state.inputForm.currentInput)
         .then((isValid) => {
@@ -134,6 +133,7 @@ export default () => {
 
                   watchedInputForm.state = 'processed';
                   watchedFeeds.state = 'loaded';
+                  form.reset();
 
                   let postsIds = getPostsIds();
 
