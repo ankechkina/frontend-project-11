@@ -1,5 +1,3 @@
-/* eslint-disable import/extensions */
-
 import { getPath, getPageContent } from './utils.js';
 import parseRss from './parser.js';
 
