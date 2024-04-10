@@ -1,32 +1,40 @@
+const isValidRss = (site) => site.includes('<rss') || site.includes('<channel');
+
 export default (pageContent) => {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(pageContent, 'text/xml');
-  const channelTags = xmlDoc.getElementsByTagName('channel')[0].children;
+  const validRssFeed = isValidRss(pageContent);
 
-  const tagsArray = Array.from(channelTags);
+  if (!validRssFeed) {
+    throw new Error('invalidRss');
+  } else {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(pageContent, 'text/xml');
+    const channelTags = xmlDoc.getElementsByTagName('channel')[0].children;
 
-  const titleEl = tagsArray.find((el) => el.tagName === 'title');
-  const title = titleEl.textContent;
+    const tagsArray = Array.from(channelTags);
 
-  const descriptionEl = tagsArray.find((el) => el.tagName === 'description');
-  const description = descriptionEl.textContent;
+    const titleEl = tagsArray.find((el) => el.tagName === 'title');
+    const title = titleEl.textContent;
 
-  const items = tagsArray.filter((el) => el.tagName === 'item');
+    const descriptionEl = tagsArray.find((el) => el.tagName === 'description');
+    const description = descriptionEl.textContent;
 
-  const itemData = [];
+    const items = tagsArray.filter((el) => el.tagName === 'item');
 
-  items.forEach((item) => {
-    const currentItemData = {
-      title: item.querySelector('title').textContent,
-      link: item.querySelector('link').textContent,
-      description: item.querySelector('description').textContent,
+    const itemData = [];
+
+    items.forEach((item) => {
+      const currentItemData = {
+        title: item.querySelector('title').textContent,
+        link: item.querySelector('link').textContent,
+        description: item.querySelector('description').textContent,
+      };
+      itemData.push(currentItemData);
+    });
+
+    return {
+      title,
+      description,
+      itemData,
     };
-    itemData.push(currentItemData);
-  });
-
-  return {
-    title,
-    description,
-    itemData,
-  };
+  }
 };

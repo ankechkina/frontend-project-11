@@ -41,8 +41,6 @@ export default () => {
 
     const validUrlSchema = yup.string().url();
 
-    const isValidRss = (site) => site.includes('<rss') || site.includes('<channel');
-
     const feedbackElements = {
       urlInput: document.querySelector('#url-input'),
       feedbackMessage: document.querySelector('.feedback'),
@@ -103,152 +101,153 @@ export default () => {
                 throw new Error('Bad response');
               })
               .then((data) => {
-                const pageContent = data.contents;
-                const validRssFeed = isValidRss(pageContent);
+                if (state.rssPaths.includes(currentInput)) {
+                  throw new Error('existingRss');
+                }
 
-                if (!validRssFeed) {
+                const pageContent = data.contents;
+                const channelData = parseRss(pageContent);
+                state.inputForm.currentError = '';
+                state.rssPaths.push(currentInput);
+                state.parsedRss.feeds.push(channelData);
+
+                watchedInputForm.state = 'processed';
+                watchedFeeds.state = 'loaded';
+                form.reset();
+
+                let postsIds = getPostsIds();
+
+                postsIds.forEach((id) => {
+                  const uiObj = { postId: id, state: 'not visited' };
+                  state.uiState.posts.push(uiObj);
+                });
+
+                const postLinks = document.querySelectorAll('a[data-id]');
+                const postButtons = document.querySelectorAll('button[data-id]');
+
+                postLinks.forEach((link) => {
+                  link.addEventListener('click', (ev) => {
+                    const currentId = ev.target.dataset.id;
+                    const currentPost = state.uiState.posts.find((post) => {
+                      const foundPost = post.postId === currentId;
+                      return foundPost;
+                    });
+                    currentPost.state = 'visited';
+
+                    if (!state.uiState.visitedIds.includes(currentId)) {
+                      watchedUiState.visitedIds.push(currentId);
+                    }
+                  });
+                });
+
+                postButtons.forEach((button) => {
+                  button.addEventListener('click', (event) => {
+                    const currentId = event.target.dataset.id;
+                    const currentPost = state.uiState.posts.find((post) => {
+                      const currPost = post.postId === currentId;
+                      return currPost;
+                    });
+                    currentPost.state = 'visited';
+
+                    state.clickedButton.id = '';
+                    watchedClickedButton.id = currentId;
+
+                    if (!state.uiState.visitedIds.includes(currentId)) {
+                      watchedUiState.visitedIds.push(currentId);
+                    }
+                  });
+                });
+
+                const checkForUpdates = () => {
+                  state.parsedRss.state = 'checking updates';
+                  getUpdates(state)
+                    .then((updates) => {
+                      const hasUpdates = updates.some((update) => update !== null);
+                      if (hasUpdates) {
+                        updates.forEach((update, index) => {
+                          if (update !== null) {
+                            state.parsedRss.feeds[index] = update;
+                          }
+                        });
+                        watchedFeeds.state = 'updated';
+
+                        const updatedPostIds = getPostsIds();
+                        updatedPostIds.sort();
+                        postsIds.sort();
+
+                        const hasNewPosts = updatedPostIds.some((id, index) => {
+                          const result = id !== postsIds[index];
+                          return result;
+                        });
+                        if (hasNewPosts) {
+                          const newPosts = updatedPostIds.filter((id) => !postsIds.includes(id));
+                          newPosts.forEach((id) => {
+                            const uiObj = { postId: id, state: 'not visited' };
+                            state.uiState.posts.push(uiObj);
+                          });
+                          postsIds = updatedPostIds;
+                        }
+
+                        const updatedPostLinks = document.querySelectorAll('a[data-id]');
+                        const updatedPostButtons = document.querySelectorAll('button[data-id]');
+
+                        updatedPostLinks.forEach((link) => {
+                          link.addEventListener('click', (ev) => {
+                            const currentId = ev.target.dataset.id;
+                            const currentPost = state.uiState.posts.find((post) => {
+                              const resultLink = post.postId === currentId;
+                              return resultLink;
+                            });
+                            currentPost.state = 'visited';
+                            if (!state.uiState.visitedIds.includes(currentId)) {
+                              watchedUiState.visitedIds.push(currentId);
+                            }
+                          });
+                        });
+
+                        updatedPostButtons.forEach((button) => {
+                          button.addEventListener('click', (event) => {
+                            const currentId = event.target.dataset.id;
+                            const currentPost = state.uiState.posts.find((post) => {
+                              const currPost = post.postId === currentId;
+                              return currPost;
+                            });
+                            currentPost.state = 'visited';
+                            state.clickedButton.id = '';
+                            watchedClickedButton.id = currentId;
+
+                            if (!state.uiState.visitedIds.includes(currentId)) {
+                              watchedUiState.visitedIds.push(currentId);
+                            }
+                          });
+                        });
+                      } else {
+                        state.parsedRss.state = 'no updates';
+                      }
+                      setTimeout(checkForUpdates, 5000);
+                    })
+                    .catch(() => {
+                      state.inputForm.currentError = 'networkError';
+                      watchedInputForm.state = 'failed';
+                      setTimeout(checkForUpdates, 5000);
+                    });
+                };
+                checkForUpdates();
+              })
+              .catch((error) => {
+                if (error.message === 'invalidRss') {
                   state.inputForm.currentError = 'invalidRss';
                   watchedInputForm.state = 'failed';
                   state.parsedRss.state = 'empty';
-                } else if (validRssFeed && state.rssPaths.includes(currentInput)) {
+                } else if (error.message === 'existingRss') {
                   state.inputForm.currentError = 'existingRss';
                   watchedInputForm.state = 'failed';
                   state.parsedRss.state = 'empty';
-                } else if (validRssFeed && !state.rssPaths.includes(currentInput)) {
-                  state.inputForm.currentError = '';
-                  state.rssPaths.push(currentInput);
-
-                  const channelData = parseRss(pageContent);
-                  state.parsedRss.feeds.push(channelData);
-
-                  watchedInputForm.state = 'processed';
-                  watchedFeeds.state = 'loaded';
-                  form.reset();
-
-                  let postsIds = getPostsIds();
-
-                  postsIds.forEach((id) => {
-                    const uiObj = { postId: id, state: 'not visited' };
-                    state.uiState.posts.push(uiObj);
-                  });
-
-                  const postLinks = document.querySelectorAll('a[data-id]');
-                  const postButtons = document.querySelectorAll('button[data-id]');
-
-                  postLinks.forEach((link) => {
-                    link.addEventListener('click', (ev) => {
-                      const currentId = ev.target.dataset.id;
-                      const currentPost = state.uiState.posts.find((post) => {
-                        const foundPost = post.postId === currentId;
-                        return foundPost;
-                      });
-                      currentPost.state = 'visited';
-
-                      if (!state.uiState.visitedIds.includes(currentId)) {
-                        watchedUiState.visitedIds.push(currentId);
-                      }
-                    });
-                  });
-
-                  postButtons.forEach((button) => {
-                    button.addEventListener('click', (event) => {
-                      const currentId = event.target.dataset.id;
-                      const currentPost = state.uiState.posts.find((post) => {
-                        const currPost = post.postId === currentId;
-                        return currPost;
-                      });
-                      currentPost.state = 'visited';
-
-                      state.clickedButton.id = '';
-                      watchedClickedButton.id = currentId;
-
-                      if (!state.uiState.visitedIds.includes(currentId)) {
-                        watchedUiState.visitedIds.push(currentId);
-                      }
-                    });
-                  });
-
-                  const checkForUpdates = () => {
-                    state.parsedRss.state = 'checking updates';
-                    getUpdates(state)
-                      .then((updates) => {
-                        const hasUpdates = updates.some((update) => update !== null);
-                        if (hasUpdates) {
-                          updates.forEach((update, index) => {
-                            if (update !== null) {
-                              state.parsedRss.feeds[index] = update;
-                            }
-                          });
-                          watchedFeeds.state = 'updated';
-
-                          const updatedPostIds = getPostsIds();
-                          updatedPostIds.sort();
-                          postsIds.sort();
-
-                          const hasNewPosts = updatedPostIds.some((id, index) => {
-                            const result = id !== postsIds[index];
-                            return result;
-                          });
-                          if (hasNewPosts) {
-                            const newPosts = updatedPostIds.filter((id) => !postsIds.includes(id));
-                            newPosts.forEach((id) => {
-                              const uiObj = { postId: id, state: 'not visited' };
-                              state.uiState.posts.push(uiObj);
-                            });
-                            postsIds = updatedPostIds;
-                          }
-
-                          const updatedPostLinks = document.querySelectorAll('a[data-id]');
-                          const updatedPostButtons = document.querySelectorAll('button[data-id]');
-
-                          updatedPostLinks.forEach((link) => {
-                            link.addEventListener('click', (ev) => {
-                              const currentId = ev.target.dataset.id;
-                              const currentPost = state.uiState.posts.find((post) => {
-                                const resultLink = post.postId === currentId;
-                                return resultLink;
-                              });
-                              currentPost.state = 'visited';
-                              if (!state.uiState.visitedIds.includes(currentId)) {
-                                watchedUiState.visitedIds.push(currentId);
-                              }
-                            });
-                          });
-
-                          updatedPostButtons.forEach((button) => {
-                            button.addEventListener('click', (event) => {
-                              const currentId = event.target.dataset.id;
-                              const currentPost = state.uiState.posts.find((post) => {
-                                const currPost = post.postId === currentId;
-                                return currPost;
-                              });
-                              currentPost.state = 'visited';
-                              state.clickedButton.id = '';
-                              watchedClickedButton.id = currentId;
-
-                              if (!state.uiState.visitedIds.includes(currentId)) {
-                                watchedUiState.visitedIds.push(currentId);
-                              }
-                            });
-                          });
-                        } else {
-                          state.parsedRss.state = 'no updates';
-                        }
-                        setTimeout(checkForUpdates, 5000);
-                      })
-                      .catch(() => {
-                        state.inputForm.currentError = 'networkError';
-                        watchedInputForm.state = 'failed';
-                        setTimeout(checkForUpdates, 5000);
-                      });
-                  };
-                  checkForUpdates();
+                } else {
+                  state.inputForm.currentError = 'networkError';
+                  watchedInputForm.state = 'failed';
+                  state.parsedRss.state = 'empty';
                 }
-              })
-              .catch(() => {
-                state.inputForm.currentError = 'networkError';
-                watchedInputForm.state = 'failed';
-                state.parsedRss.state = 'empty';
               });
           }
         })
