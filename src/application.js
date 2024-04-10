@@ -23,7 +23,6 @@ export default () => {
     const state = {
       inputForm: {
         state: 'filling',
-        currentInput: '',
         currentError: '',
       },
       parsedRss: {
@@ -83,13 +82,12 @@ export default () => {
       e.preventDefault();
       const formData = new FormData(e.target);
       const inputValue = formData.get('url');
-      const normalizedInput = inputValue.toLowerCase().trim();
-      state.inputForm.currentInput = normalizedInput;
+      const currentInput = inputValue.toLowerCase().trim();
 
       watchedInputForm.state = 'processing';
       state.parsedRss.state = 'processing';
 
-      validUrlSchema.isValid(state.inputForm.currentInput)
+      validUrlSchema.isValid(currentInput)
         .then((isValid) => {
           if (!isValid) {
             state.inputForm.currentError = 'invalidUrl';
@@ -97,7 +95,7 @@ export default () => {
             state.parsedRss.state = 'empty';
           }
           if (isValid) {
-            const path = getPath(state.inputForm.currentInput);
+            const path = getPath(currentInput);
 
             axios.get(path)
               .then((response) => {
@@ -112,13 +110,13 @@ export default () => {
                   state.inputForm.currentError = 'invalidRss';
                   watchedInputForm.state = 'failed';
                   state.parsedRss.state = 'empty';
-                } else if (validRssFeed && state.rssPaths.includes(state.inputForm.currentInput)) {
+                } else if (validRssFeed && state.rssPaths.includes(currentInput)) {
                   state.inputForm.currentError = 'existingRss';
                   watchedInputForm.state = 'failed';
                   state.parsedRss.state = 'empty';
-                } else if (validRssFeed && !state.rssPaths.includes(state.inputForm.currentInput)) {
+                } else if (validRssFeed && !state.rssPaths.includes(currentInput)) {
                   state.inputForm.currentError = '';
-                  state.rssPaths.push(state.inputForm.currentInput);
+                  state.rssPaths.push(currentInput);
 
                   const channelData = parseRss(pageContent);
                   state.parsedRss.feeds.push(channelData);
