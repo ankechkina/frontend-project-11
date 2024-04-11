@@ -126,12 +126,11 @@ export default () => {
                   state.uiState.posts.push(uiObj);
                 });
 
-                const postLinks = document.querySelectorAll('a[data-id]');
-                const postButtons = document.querySelectorAll('button[data-id]');
+                const postsGroup = document.querySelector('.posts-group');
 
-                postLinks.forEach((link) => {
-                  link.addEventListener('click', (ev) => {
-                    const currentId = ev.target.dataset.id;
+                postsGroup.addEventListener('click', (event) => {
+                  if (event.target.dataset.id) {
+                    const currentId = event.target.dataset.id;
                     const currentPost = state.uiState.posts.find((post) => {
                       const foundPost = post.postId === currentId;
                       return foundPost;
@@ -141,25 +140,12 @@ export default () => {
                     if (!state.uiState.visitedIds.includes(currentId)) {
                       watchedUiState.visitedIds.push(currentId);
                     }
-                  });
-                });
 
-                postButtons.forEach((button) => {
-                  button.addEventListener('click', (event) => {
-                    const currentId = event.target.dataset.id;
-                    const currentPost = state.uiState.posts.find((post) => {
-                      const currPost = post.postId === currentId;
-                      return currPost;
-                    });
-                    currentPost.state = 'visited';
-
-                    state.clickedButton.id = '';
-                    watchedClickedButton.id = currentId;
-
-                    if (!state.uiState.visitedIds.includes(currentId)) {
-                      watchedUiState.visitedIds.push(currentId);
+                    if (event.target.matches('button')) {
+                      state.clickedButton.id = '';
+                      watchedClickedButton.id = currentId;
                     }
-                  });
+                  }
                 });
 
                 const checkForUpdates = () => {
@@ -194,38 +180,24 @@ export default () => {
                           postsIds = updatedPostIds;
                         }
 
-                        const updatedPostLinks = document.querySelectorAll('a[data-id]');
-                        const updatedPostButtons = document.querySelectorAll('button[data-id]');
-
-                        updatedPostLinks.forEach((link) => {
-                          link.addEventListener('click', (ev) => {
+                        postsGroup.addEventListener('click', (ev) => {
+                          if (ev.target.dataset.id) {
                             const currentId = ev.target.dataset.id;
                             const currentPost = state.uiState.posts.find((post) => {
-                              const resultLink = post.postId === currentId;
-                              return resultLink;
+                              const foundPost = post.postId === currentId;
+                              return foundPost;
                             });
                             currentPost.state = 'visited';
-                            if (!state.uiState.visitedIds.includes(currentId)) {
-                              watchedUiState.visitedIds.push(currentId);
-                            }
-                          });
-                        });
-
-                        updatedPostButtons.forEach((button) => {
-                          button.addEventListener('click', (event) => {
-                            const currentId = event.target.dataset.id;
-                            const currentPost = state.uiState.posts.find((post) => {
-                              const currPost = post.postId === currentId;
-                              return currPost;
-                            });
-                            currentPost.state = 'visited';
-                            state.clickedButton.id = '';
-                            watchedClickedButton.id = currentId;
 
                             if (!state.uiState.visitedIds.includes(currentId)) {
                               watchedUiState.visitedIds.push(currentId);
                             }
-                          });
+
+                            if (ev.target.matches('button')) {
+                              state.clickedButton.id = '';
+                              watchedClickedButton.id = currentId;
+                            }
+                          }
                         });
                       } else {
                         state.parsedRss.state = 'no updates';
