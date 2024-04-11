@@ -31,10 +31,11 @@ export default (pageContent) => {
       itemData.push(currentItemData);
     });
 
-    return {
+    const feedData = {
       title,
       description,
-      itemData,
     };
+
+    return [feedData, itemData];
   }
 };

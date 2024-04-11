@@ -1,9 +1,3 @@
-const getPostsIds = () => {
-  const links = document.querySelectorAll('a[data-id]');
-  const idsArray = Array.from(links).map((link) => link.dataset.id);
-  return idsArray;
-};
-
 const changePostsUi = (state) => {
   const links = Array.from(document.querySelectorAll('a[data-id]'));
   const visitedPosts = state.uiState.posts.filter((post) => post.state === 'visited');
@@ -17,4 +11,4 @@ const changePostsUi = (state) => {
   });
 };
 
-export { changePostsUi, getPostsIds };
+export default changePostsUi;

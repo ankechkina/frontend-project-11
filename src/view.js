@@ -62,44 +62,46 @@ const renderContent = (state, contentElements, i18nInstance) => {
     feedName.classList.add('h6', 'm-0');
     feedName.textContent = feedObj.title;
     feedItem.prepend(feedName);
+  });
 
-    feedObj.itemData.forEach((item) => {
-      const listItem = document.createElement('li');
-      listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+  const allPosts = state.parsedRss.posts.flat();
 
-      const link = document.createElement('a');
-      link.setAttribute('href', item.link);
-      link.setAttribute('data-id', item.link);
-      link.setAttribute('target', '_blank');
-      link.setAttribute('rel', 'noopener noreferrer');
-      link.textContent = item.title;
+  allPosts.forEach((item) => {
+    const listItem = document.createElement('li');
+    listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
 
-      if (state.uiState.visitedIds.includes(item.link)) {
-        link.classList.add('fw-normal', 'link-secondary');
-      } else {
-        link.classList.add('fw-bold');
-      }
+    const link = document.createElement('a');
+    link.setAttribute('href', item.link);
+    link.setAttribute('data-id', item.link);
+    link.setAttribute('target', '_blank');
+    link.setAttribute('rel', 'noopener noreferrer');
+    link.textContent = item.title;
 
-      const button = document.createElement('button');
-      button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-      button.setAttribute('data-id', item.link);
-      button.setAttribute('data-bs-toggle', 'modal');
-      button.setAttribute('data-bs-target', '#myModal');
-      button.textContent = i18nInstance.t('content.viewButton');
+    if (state.uiState.visitedIds.includes(item.link)) {
+      link.classList.add('fw-normal', 'link-secondary');
+    } else {
+      link.classList.add('fw-bold');
+    }
 
-      listItem.appendChild(link);
-      listItem.appendChild(button);
+    const button = document.createElement('button');
+    button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    button.setAttribute('data-id', item.link);
+    button.setAttribute('data-bs-toggle', 'modal');
+    button.setAttribute('data-bs-target', '#myModal');
+    button.textContent = i18nInstance.t('content.viewButton');
 
-      postsGroup.prepend(listItem);
-    });
+    listItem.appendChild(link);
+    listItem.appendChild(button);
+
+    postsGroup.prepend(listItem);
   });
 };
 
 const showModalWindow = (state, modalElements) => {
   const { modalTitle, modalBody, modalButton } = modalElements;
 
-  const allItems = state.parsedRss.feeds.flatMap((feed) => feed.itemData);
-  const currentItem = allItems.find((item) => item.link === state.clickedButton.id);
+  const allPosts = state.parsedRss.posts.flat();
+  const currentItem = allPosts.find((item) => item.link === state.clickedButton.id);
 
   modalTitle.textContent = currentItem.title;
   modalBody.textContent = currentItem.description;

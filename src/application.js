@@ -9,7 +9,7 @@ import { renderFeedback, renderContent, showModalWindow } from './view.js';
 import parseRss from './parser.js';
 import getUpdates from './updates.js';
 import { getPath } from './utils.js';
-import { changePostsUi, getPostsIds } from './ui.js';
+import changePostsUi from './ui.js';
 
 export default () => {
   const i18nInstance = i18n.createInstance();
@@ -28,6 +28,7 @@ export default () => {
       parsedRss: {
         state: 'empty',
         feeds: [],
+        posts: [],
       },
       rssPaths: [],
       uiState: {
@@ -106,16 +107,19 @@ export default () => {
                 }
 
                 const pageContent = data.contents;
-                const channelData = parseRss(pageContent);
+                const [feedData, itemData] = parseRss(pageContent);
+
                 state.inputForm.currentError = '';
                 state.rssPaths.push(currentInput);
-                state.parsedRss.feeds.push(channelData);
+                state.parsedRss.feeds.push(feedData);
+                state.parsedRss.posts.push(itemData);
 
                 watchedInputForm.state = 'processed';
                 watchedFeeds.state = 'loaded';
                 form.reset();
 
-                let postsIds = getPostsIds();
+                const allPosts = state.parsedRss.posts.flat();
+                let postsIds = allPosts.map((item) => item.link);
 
                 postsIds.forEach((id) => {
                   const uiObj = { postId: id, state: 'not visited' };
@@ -166,12 +170,14 @@ export default () => {
                       if (hasUpdates) {
                         updates.forEach((update, index) => {
                           if (update !== null) {
-                            state.parsedRss.feeds[index] = update;
+                            state.parsedRss.posts[index] = update;
                           }
                         });
                         watchedFeeds.state = 'updated';
 
-                        const updatedPostIds = getPostsIds();
+                        const updatedPosts = state.parsedRss.posts.flat();
+                        const updatedPostIds = updatedPosts.map((item) => item.link);
+
                         updatedPostIds.sort();
                         postsIds.sort();
 

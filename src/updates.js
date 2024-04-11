@@ -4,19 +4,19 @@ import parseRss from './parser.js';
 const getUpdates = (state) => {
   const promises = state.rssPaths.map((path, index) => {
     const fullPath = getPath(path);
-    const oldChannelData = state.parsedRss.feeds[index];
+    const oldPostsData = state.parsedRss.posts[index];
 
     return getPageContent(fullPath)
       .then((pageContent) => {
-        const newChannelData = parseRss(pageContent);
+        const [, newPostsData] = parseRss(pageContent);
 
-        const oldTitles = oldChannelData.itemData.map((item) => item.title);
-        const newTitles = newChannelData.itemData.map((item) => item.title);
+        const oldTitles = oldPostsData.map((item) => item.title);
+        const newTitles = newPostsData.map((item) => item.title);
 
-        const hasUpdates = newTitles.some((title, ind) => title !== oldTitles[ind]);
+        const hasUpdates = newTitles.some((title, i) => title !== oldTitles[i]);
 
         if (hasUpdates) {
-          return newChannelData;
+          return newPostsData;
         }
         return null;
       });
