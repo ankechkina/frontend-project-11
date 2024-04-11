@@ -155,9 +155,7 @@ export default () => {
                       const hasUpdates = updates.some((update) => update !== null);
                       if (hasUpdates) {
                         updates.forEach((update, index) => {
-                          if (update !== null) {
-                            state.parsedRss.posts[index] = update;
-                          }
+                          state.parsedRss.posts[index] = update;
                         });
                         watchedFeeds.state = 'updated';
 

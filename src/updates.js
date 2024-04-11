@@ -19,6 +19,9 @@ const getUpdates = (state) => {
           return newPostsData;
         }
         return null;
+      })
+      .catch(() => {
+        throw new Error('updateError');
       });
   });
   return Promise.all(promises);

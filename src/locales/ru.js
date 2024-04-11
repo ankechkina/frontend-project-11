@@ -7,6 +7,7 @@ export default {
       invalidRss: 'Ресурс не содержит валидный RSS',
       existingRss: 'RSS уже существует',
       success: 'RSS успешно загружен',
+      updateError: 'Ошибка при получении обновлений',
     },
     content: {
       postsHeader: 'Посты',
