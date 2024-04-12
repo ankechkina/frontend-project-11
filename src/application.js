@@ -29,6 +29,7 @@ export default () => {
         state: 'empty',
         feeds: [],
         posts: [],
+        postIds: [],
       },
       rssPaths: [],
       uiState: {
@@ -119,9 +120,11 @@ export default () => {
                 form.reset();
 
                 const allPosts = state.parsedRss.posts.flat();
-                let postsIds = allPosts.map((item) => item.link);
+                const postIds = allPosts.map((item) => item.link);
 
-                postsIds.forEach((id) => {
+                state.parsedRss.postIds = postIds;
+
+                postIds.forEach((id) => {
                   const uiObj = { postId: id, state: 'not visited' };
                   state.uiState.posts.push(uiObj);
                 });
@@ -147,68 +150,6 @@ export default () => {
                     }
                   }
                 });
-
-                const checkForUpdates = () => {
-                  state.parsedRss.state = 'checking updates';
-                  getUpdates(state)
-                    .then((updates) => {
-                      const hasUpdates = updates.some((update) => update !== null);
-                      if (hasUpdates) {
-                        updates.forEach((update, index) => {
-                          state.parsedRss.posts[index] = update;
-                        });
-                        watchedFeeds.state = 'updated';
-
-                        const updatedPosts = state.parsedRss.posts.flat();
-                        const updatedPostIds = updatedPosts.map((item) => item.link);
-
-                        updatedPostIds.sort();
-                        postsIds.sort();
-
-                        const hasNewPosts = updatedPostIds.some((id, index) => {
-                          const result = id !== postsIds[index];
-                          return result;
-                        });
-                        if (hasNewPosts) {
-                          const newPosts = updatedPostIds.filter((id) => !postsIds.includes(id));
-                          newPosts.forEach((id) => {
-                            const uiObj = { postId: id, state: 'not visited' };
-                            state.uiState.posts.push(uiObj);
-                          });
-                          postsIds = updatedPostIds;
-                        }
-
-                        postsGroup.addEventListener('click', (ev) => {
-                          if (ev.target.dataset.id) {
-                            const currentId = ev.target.dataset.id;
-                            const currentPost = state.uiState.posts.find((post) => {
-                              const foundPost = post.postId === currentId;
-                              return foundPost;
-                            });
-                            currentPost.state = 'visited';
-
-                            if (!state.uiState.visitedIds.includes(currentId)) {
-                              watchedUiState.visitedIds.push(currentId);
-                            }
-
-                            if (ev.target.matches('button')) {
-                              state.clickedButton.id = '';
-                              watchedClickedButton.id = currentId;
-                            }
-                          }
-                        });
-                      } else {
-                        state.parsedRss.state = 'no updates';
-                      }
-                      setTimeout(checkForUpdates, 5000);
-                    })
-                    .catch(() => {
-                      state.inputForm.currentError = 'networkError';
-                      watchedInputForm.state = 'failed';
-                      setTimeout(checkForUpdates, 5000);
-                    });
-                };
-                checkForUpdates();
               })
               .catch((error) => {
                 if (error.message === 'invalidRss') {
@@ -233,5 +174,70 @@ export default () => {
           state.parsedRss.state = 'empty';
         });
     });
+    const checkForUpdates = () => {
+      state.parsedRss.state = 'checking updates';
+      getUpdates(state)
+        .then((updates) => {
+          const hasUpdates = updates.some((update) => update !== null);
+          if (hasUpdates) {
+            updates.forEach((update, index) => {
+              state.parsedRss.posts[index] = update;
+            });
+            watchedFeeds.state = 'updated';
+
+            const updatedPosts = state.parsedRss.posts.flat();
+            const updatedPostIds = updatedPosts.map((item) => item.link);
+            const oldPostIds = state.parsedRss.postIds;
+
+            updatedPostIds.sort();
+            oldPostIds.sort();
+
+            const hasNewPosts = updatedPostIds.some((id, index) => {
+              const result = id !== oldPostIds[index];
+              return result;
+            });
+            if (hasNewPosts) {
+              const newPosts = updatedPostIds.filter((id) => !oldPostIds.includes(id));
+              newPosts.forEach((id) => {
+                const uiObj = { postId: id, state: 'not visited' };
+                state.uiState.posts.push(uiObj);
+              });
+              state.parsedRss.postIds = updatedPostIds;
+            }
+
+            const postsGroup = document.querySelector('.posts-group');
+
+            postsGroup.addEventListener('click', (ev) => {
+              if (ev.target.dataset.id) {
+                const currentId = ev.target.dataset.id;
+                const currentPost = state.uiState.posts.find((post) => {
+                  const foundPost = post.postId === currentId;
+                  return foundPost;
+                });
+                currentPost.state = 'visited';
+
+                if (!state.uiState.visitedIds.includes(currentId)) {
+                  watchedUiState.visitedIds.push(currentId);
+                }
+
+                if (ev.target.matches('button')) {
+                  state.clickedButton.id = '';
+                  watchedClickedButton.id = currentId;
+                }
+              }
+            });
+          } else {
+            state.parsedRss.state = 'no updates';
+          }
+        })
+        .catch(() => {
+          state.inputForm.currentError = 'networkError';
+          watchedInputForm.state = 'failed';
+        })
+        .finally(() => {
+          setTimeout(checkForUpdates, 5000);
+        });
+    };
+    checkForUpdates();
   });
 };
