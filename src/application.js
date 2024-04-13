@@ -41,7 +41,13 @@ export default () => {
       },
     };
 
-    const validUrlSchema = yup.string().url();
+    const validUrlSchema = yup.string().url('invalidUrl').test({
+      name: 'notOneOf',
+      message: 'existingRss',
+      test(value) {
+        return !state.rssPaths.includes(value);
+      },
+    });
 
     const feedbackElements = {
       urlInput: document.querySelector('#url-input'),
@@ -87,91 +93,86 @@ export default () => {
       watchedInputForm.state = 'processing';
       state.parsedRss.state = 'processing';
 
-      validUrlSchema.isValid(currentInput)
-        .then((isValid) => {
-          if (!isValid) {
+      validUrlSchema.validate(currentInput)
+        .then(() => {
+          const path = getPath(currentInput);
+
+          axios.get(path)
+            .then((response) => {
+              if (response.status === 200) return response.data;
+              throw new Error('networkError');
+            })
+            .then((data) => {
+              const pageContent = data.contents;
+              const [feedData, itemData] = parseRss(pageContent);
+
+              state.inputForm.currentError = '';
+              state.rssPaths.push(currentInput);
+              state.parsedRss.feeds.push(feedData);
+              state.parsedRss.posts.push(itemData);
+
+              watchedInputForm.state = 'processed';
+              watchedFeeds.state = 'loaded';
+              form.reset();
+
+              const allPosts = state.parsedRss.posts.flat();
+              const postIds = allPosts.map((item) => item.link);
+
+              state.parsedRss.postIds = postIds;
+
+              postIds.forEach((id) => {
+                const uiObj = { postId: id, state: 'not visited' };
+                state.uiState.posts.push(uiObj);
+              });
+
+              const postsGroup = document.querySelector('.posts-group');
+
+              postsGroup.addEventListener('click', (event) => {
+                if (event.target.dataset.id) {
+                  const currentId = event.target.dataset.id;
+                  const currentPost = state.uiState.posts.find((post) => {
+                    const foundPost = post.postId === currentId;
+                    return foundPost;
+                  });
+                  currentPost.state = 'visited';
+
+                  if (!state.uiState.visitedIds.includes(currentId)) {
+                    watchedUiState.visitedIds.push(currentId);
+                  }
+
+                  if (event.target.matches('button')) {
+                    state.clickedButton.id = '';
+                    watchedClickedButton.id = currentId;
+                  }
+                }
+              });
+            })
+            .catch((error) => {
+              if (error.message === 'invalidRss') {
+                state.inputForm.currentError = 'invalidRss';
+                watchedInputForm.state = 'failed';
+                state.parsedRss.state = 'empty';
+              } else {
+                state.inputForm.currentError = 'networkError';
+                watchedInputForm.state = 'failed';
+                state.parsedRss.state = 'empty';
+              }
+            });
+        })
+        .catch((er) => {
+          if (er.message === 'invalidUrl') {
             state.inputForm.currentError = 'invalidUrl';
             watchedInputForm.state = 'failed';
             state.parsedRss.state = 'empty';
+          } else if (er.message === 'existingRss') {
+            state.inputForm.currentError = 'existingRss';
+            watchedInputForm.state = 'failed';
+            state.parsedRss.state = 'empty';
+          } else {
+            state.inputForm.currentError = 'networkError';
+            watchedInputForm.state = 'failed';
+            state.parsedRss.state = 'empty';
           }
-          if (isValid) {
-            const path = getPath(currentInput);
-
-            axios.get(path)
-              .then((response) => {
-                if (response.status === 200) return response.data;
-                throw new Error('Bad response');
-              })
-              .then((data) => {
-                if (state.rssPaths.includes(currentInput)) {
-                  throw new Error('existingRss');
-                }
-
-                const pageContent = data.contents;
-                const [feedData, itemData] = parseRss(pageContent);
-
-                state.inputForm.currentError = '';
-                state.rssPaths.push(currentInput);
-                state.parsedRss.feeds.push(feedData);
-                state.parsedRss.posts.push(itemData);
-
-                watchedInputForm.state = 'processed';
-                watchedFeeds.state = 'loaded';
-                form.reset();
-
-                const allPosts = state.parsedRss.posts.flat();
-                const postIds = allPosts.map((item) => item.link);
-
-                state.parsedRss.postIds = postIds;
-
-                postIds.forEach((id) => {
-                  const uiObj = { postId: id, state: 'not visited' };
-                  state.uiState.posts.push(uiObj);
-                });
-
-                const postsGroup = document.querySelector('.posts-group');
-
-                postsGroup.addEventListener('click', (event) => {
-                  if (event.target.dataset.id) {
-                    const currentId = event.target.dataset.id;
-                    const currentPost = state.uiState.posts.find((post) => {
-                      const foundPost = post.postId === currentId;
-                      return foundPost;
-                    });
-                    currentPost.state = 'visited';
-
-                    if (!state.uiState.visitedIds.includes(currentId)) {
-                      watchedUiState.visitedIds.push(currentId);
-                    }
-
-                    if (event.target.matches('button')) {
-                      state.clickedButton.id = '';
-                      watchedClickedButton.id = currentId;
-                    }
-                  }
-                });
-              })
-              .catch((error) => {
-                if (error.message === 'invalidRss') {
-                  state.inputForm.currentError = 'invalidRss';
-                  watchedInputForm.state = 'failed';
-                  state.parsedRss.state = 'empty';
-                } else if (error.message === 'existingRss') {
-                  state.inputForm.currentError = 'existingRss';
-                  watchedInputForm.state = 'failed';
-                  state.parsedRss.state = 'empty';
-                } else {
-                  state.inputForm.currentError = 'networkError';
-                  watchedInputForm.state = 'failed';
-                  state.parsedRss.state = 'empty';
-                }
-              });
-          }
-        })
-        .catch(() => {
-          state.inputForm.currentError = 'networkError';
-          watchedInputForm.state = 'failed';
-          state.parsedRss.state = 'empty';
         });
     });
     const checkForUpdates = () => {
