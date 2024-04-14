@@ -1,9 +1,9 @@
 const changePostsUi = (state) => {
   const links = Array.from(document.querySelectorAll('a[data-id]'));
-  const visitedPosts = state.uiState.posts.filter((post) => post.state === 'visited');
+  const { visitedIds } = state.uiState;
 
-  visitedPosts.forEach((post) => {
-    const foundLink = links.find((el) => el.dataset.id === post.postId);
+  visitedIds.forEach((postId) => {
+    const foundLink = links.find((el) => el.dataset.id === postId);
     if (foundLink) {
       foundLink.classList.remove('fw-bold');
       foundLink.classList.add('fw-normal', 'link-secondary');

@@ -33,7 +33,6 @@ export default () => {
       },
       rssPaths: [],
       uiState: {
-        posts: [],
         visitedIds: [],
       },
       clickedButton: {
@@ -120,21 +119,11 @@ export default () => {
 
               state.parsedRss.postIds = postIds;
 
-              postIds.forEach((id) => {
-                const uiObj = { postId: id, state: 'not visited' };
-                state.uiState.posts.push(uiObj);
-              });
-
               const postsGroup = document.querySelector('.posts-group');
 
               postsGroup.addEventListener('click', (event) => {
                 if (event.target.dataset.id) {
                   const currentId = event.target.dataset.id;
-                  const currentPost = state.uiState.posts.find((post) => {
-                    const foundPost = post.postId === currentId;
-                    return foundPost;
-                  });
-                  currentPost.state = 'visited';
 
                   if (!state.uiState.visitedIds.includes(currentId)) {
                     watchedUiState.visitedIds.push(currentId);
@@ -198,11 +187,6 @@ export default () => {
               return result;
             });
             if (hasNewPosts) {
-              const newPosts = updatedPostIds.filter((id) => !oldPostIds.includes(id));
-              newPosts.forEach((id) => {
-                const uiObj = { postId: id, state: 'not visited' };
-                state.uiState.posts.push(uiObj);
-              });
               state.parsedRss.postIds = updatedPostIds;
             }
 
@@ -211,11 +195,6 @@ export default () => {
             postsGroup.addEventListener('click', (ev) => {
               if (ev.target.dataset.id) {
                 const currentId = ev.target.dataset.id;
-                const currentPost = state.uiState.posts.find((post) => {
-                  const foundPost = post.postId === currentId;
-                  return foundPost;
-                });
-                currentPost.state = 'visited';
 
                 if (!state.uiState.visitedIds.includes(currentId)) {
                   watchedUiState.visitedIds.push(currentId);
