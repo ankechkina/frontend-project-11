@@ -130,31 +130,23 @@ export default () => {
               });
             })
             .catch((error) => {
-              if (error.message === 'invalidRss') {
-                state.inputForm.currentError = 'invalidRss';
-                watchedInputForm.state = 'failed';
-                state.parsedRss.state = 'empty';
-              } else {
+              if (error instanceof axios.AxiosError) {
                 state.inputForm.currentError = 'networkError';
-                watchedInputForm.state = 'failed';
-                state.parsedRss.state = 'empty';
+              } else {
+                state.inputForm.currentError = error.message;
               }
+              watchedInputForm.state = 'failed';
+              state.parsedRss.state = 'empty';
             });
         })
         .catch((er) => {
-          if (er.message === 'invalidUrl') {
-            state.inputForm.currentError = 'invalidUrl';
-            watchedInputForm.state = 'failed';
-            state.parsedRss.state = 'empty';
-          } else if (er.message === 'existingRss') {
-            state.inputForm.currentError = 'existingRss';
-            watchedInputForm.state = 'failed';
-            state.parsedRss.state = 'empty';
-          } else {
+          if (er instanceof axios.AxiosError) {
             state.inputForm.currentError = 'networkError';
-            watchedInputForm.state = 'failed';
-            state.parsedRss.state = 'empty';
+          } else {
+            state.inputForm.currentError = er.message;
           }
+          watchedInputForm.state = 'failed';
+          state.parsedRss.state = 'empty';
         });
     });
     const checkForUpdates = () => {

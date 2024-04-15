@@ -1,3 +1,5 @@
+import ru from './locales/ru.js';
+
 const renderFeedback = (state, feedbackElements, i18nInstance) => {
   const { urlInput, feedbackMessage, submitButton } = feedbackElements;
 
@@ -14,7 +16,14 @@ const renderFeedback = (state, feedbackElements, i18nInstance) => {
     feedbackMessage.classList.add('text-danger');
 
     const errorCode = state.inputForm.currentError;
-    feedbackMessage.textContent = i18nInstance.t(`feedback.${errorCode}`);
+    const feedbackTextObj = ru.translation.feedback;
+    const feedbackCodes = Object.keys(feedbackTextObj);
+
+    if (!feedbackCodes.includes(errorCode)) {
+      feedbackMessage.textContent = errorCode;
+    } else {
+      feedbackMessage.textContent = i18nInstance.t(`feedback.${errorCode}`);
+    }
   }
 
   if (state.inputForm.state === 'processed') {
