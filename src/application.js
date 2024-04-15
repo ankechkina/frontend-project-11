@@ -1,6 +1,5 @@
 import './styles.scss';
 import 'bootstrap';
-import * as yup from 'yup';
 import onChange from 'on-change';
 import axios from 'axios';
 import i18n from 'i18next';
@@ -8,7 +7,7 @@ import ru from './locales/ru.js';
 import { renderFeedback, renderContent, showModalWindow } from './view.js';
 import parseRss from './parser.js';
 import getUpdates from './updates.js';
-import { getPath } from './utils.js';
+import { getPath, createValidUrlSchema } from './utils.js';
 import changePostsUi from './ui.js';
 
 export default () => {
@@ -39,14 +38,6 @@ export default () => {
         id: '',
       },
     };
-
-    const validUrlSchema = yup.string().url('invalidUrl').test({
-      name: 'notOneOf',
-      message: 'existingRss',
-      test(value) {
-        return !state.rssPaths.includes(value);
-      },
-    });
 
     const feedbackElements = {
       urlInput: document.querySelector('#url-input'),
@@ -91,6 +82,8 @@ export default () => {
 
       watchedInputForm.state = 'processing';
       state.parsedRss.state = 'processing';
+
+      const validUrlSchema = createValidUrlSchema(state.rssPaths);
 
       validUrlSchema.validate(currentInput)
         .then(() => {
