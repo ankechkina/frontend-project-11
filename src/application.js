@@ -72,6 +72,23 @@ export default () => {
       showModalWindow(state, modalElements);
     });
 
+    const postsContainer = document.querySelector('.posts');
+
+    postsContainer.addEventListener('click', (event) => {
+      if (event.target.dataset.id) {
+        const currentId = event.target.dataset.id;
+
+        if (!state.uiState.visitedIds.includes(currentId)) {
+          watchedUiState.visitedIds.push(currentId);
+        }
+
+        if (event.target.matches('button')) {
+          state.clickedButton.id = '';
+          watchedClickedButton.id = currentId;
+        }
+      }
+    });
+
     const form = document.querySelector('form');
 
     form.addEventListener('submit', (e) => {
@@ -111,23 +128,6 @@ export default () => {
               const postIds = allPosts.map((item) => item.link);
 
               state.parsedRss.postIds = postIds;
-
-              const postsGroup = document.querySelector('.posts-group');
-
-              postsGroup.addEventListener('click', (event) => {
-                if (event.target.dataset.id) {
-                  const currentId = event.target.dataset.id;
-
-                  if (!state.uiState.visitedIds.includes(currentId)) {
-                    watchedUiState.visitedIds.push(currentId);
-                  }
-
-                  if (event.target.matches('button')) {
-                    state.clickedButton.id = '';
-                    watchedClickedButton.id = currentId;
-                  }
-                }
-              });
             })
             .catch((error) => {
               if (error instanceof axios.AxiosError) {
@@ -174,23 +174,6 @@ export default () => {
             if (hasNewPosts) {
               state.parsedRss.postIds = updatedPostIds;
             }
-
-            const postsGroup = document.querySelector('.posts-group');
-
-            postsGroup.addEventListener('click', (ev) => {
-              if (ev.target.dataset.id) {
-                const currentId = ev.target.dataset.id;
-
-                if (!state.uiState.visitedIds.includes(currentId)) {
-                  watchedUiState.visitedIds.push(currentId);
-                }
-
-                if (ev.target.matches('button')) {
-                  state.clickedButton.id = '';
-                  watchedClickedButton.id = currentId;
-                }
-              }
-            });
           } else {
             state.parsedRss.state = 'no updates';
           }
