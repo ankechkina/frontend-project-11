@@ -13,6 +13,9 @@ const getUpdates = (state) => {
         const oldTitles = oldPostsData.map((item) => item.title);
         const newTitles = newPostsData.map((item) => item.title);
 
+        oldTitles.sort();
+        newTitles.sort();
+
         const hasUpdates = newTitles.some((title, i) => title !== oldTitles[i]);
 
         if (hasUpdates) {
@@ -20,9 +23,7 @@ const getUpdates = (state) => {
         }
         return null;
       })
-      .catch(() => {
-        throw new Error('updateError');
-      });
+      .catch(() => null);
   });
   return Promise.all(promises);
 };

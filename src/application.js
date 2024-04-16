@@ -151,35 +151,45 @@ export default () => {
     });
     const checkForUpdates = () => {
       state.parsedRss.state = 'checking updates';
+
       getUpdates(state)
         .then((updates) => {
-          const hasUpdates = updates.some((update) => update !== null);
-          if (hasUpdates) {
-            updates.forEach((update, index) => {
-              state.parsedRss.posts[index] = update;
-            });
-            watchedFeeds.state = 'updated';
+          let updatesFound = false;
 
-            const updatedPosts = state.parsedRss.posts.flat();
-            const updatedPostIds = updatedPosts.map((item) => item.link);
-            const oldPostIds = state.parsedRss.postIds;
+          updates.forEach((update, index) => {
+            if (update !== null) {
+              const oldPosts = state.parsedRss.posts[index];
+              const newPosts = [];
 
-            updatedPostIds.sort();
-            oldPostIds.sort();
+              update.forEach((updatedPost) => {
+                const hasSamePost = oldPosts.some((oldPost) => {
+                  const isSame = oldPost.title === updatedPost.title;
+                  return isSame;
+                });
 
-            const hasNewPosts = updatedPostIds.some((id, index) => {
-              const result = id !== oldPostIds[index];
-              return result;
-            });
-            if (hasNewPosts) {
-              state.parsedRss.postIds = updatedPostIds;
+                if (!hasSamePost) {
+                  newPosts.push(updatedPost);
+                }
+              });
+
+              if (newPosts.length > 0) {
+                oldPosts.push(...newPosts);
+                const newPostIds = newPosts.map((post) => post.link);
+                state.parsedRss.postIds.push(...newPostIds);
+
+                updatesFound = true;
+              }
             }
+          });
+
+          if (updatesFound) {
+            watchedFeeds.state = 'updated';
           } else {
             state.parsedRss.state = 'no updates';
           }
         })
-        .catch(() => {
-          state.inputForm.currentError = 'networkError';
+        .catch((err) => {
+          state.inputForm.currentError = err.message;
           watchedInputForm.state = 'failed';
         })
         .finally(() => {
